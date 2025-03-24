@@ -73,8 +73,24 @@ class Image(models.Model):
         verbose_name='Фото',
     )
 '''
+class Comment(models.Model):
+    text = models.TextField(blank=False, null=True)
+    pub_date = models.DateTimeField(
+        verbose_name='Дата публикации комментария',
+        default=datetime.datetime.now,)
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Автор комментария',)
 
 class Post(CommonModel):
+    '''
+    comment = models.ForeignKey(
+        Comment,
+        on_delete=models.CASCADE,
+        verbose_name='Комментарий к публикации',
+    )
+    '''
     title = models.CharField(
         verbose_name='Заголовок',
         max_length=256,
