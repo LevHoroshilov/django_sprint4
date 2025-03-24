@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404,redirect
 from django.core.paginator import Paginator
 from django.views.generic import ListView, CreateView, DeleteView, UpdateView, DetailView
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy,reverse
 from django.core.exceptions import PermissionDenied        
 from django.contrib.auth.mixins import LoginRequiredMixin,UserPassesTestMixin
 
@@ -12,15 +12,17 @@ from blog.models import Post, Category,Comment
 from blog.forms import PostForm,CommentForm
 from users.forms import User
 
-def post_detail(request, id):
-    
+def post_detail(request, pk):
+    form = CommentForm()
+
     post = get_object_or_404(
         Post,
         pub_date__lte=datetime.datetime.now(),
         is_published=True,
         category__is_published=True,
-        id=id)
-    context = {'post': post}
+        id=pk)
+    context = {'post': post,
+               'form':form,}
     template = 'blog/detail.html'
     return render(request, template, context)
 
@@ -54,23 +56,7 @@ def user_page(request, username):
     return render(request, template, context)
 
 
-class OnlyAuthorMixin(UserPassesTestMixin):
 
-    def test_func(self):
-        object = self.get_object()
-        return object.author == self.request.user
-
-
-
-class PostCreateView(OnlyAuthorMixin, LoginRequiredMixin, CreateView):
-    model = Post
-    form_class = PostForm
-    def form_valid(self, form):
-        form.instance.author = self.request.user
-        return super().form_valid(form)
-    
-    template_name = 'blog/create.html'
-    success_url = reverse_lazy('blog:index')
 
 @login_required
 def create(request):
@@ -127,7 +113,8 @@ def add_comment(request,id):
     if form.is_valid():
         form.save()
     else:
-        form = CommentForm() 
+        form = CommentForm()
+    return redirect('blog:detail')
     return render(request, template, context)
 
 def edit_comment(request,id):
@@ -146,6 +133,25 @@ def edit_comment(request,id):
 
 
     
+class OnlyAuthorMixin(UserPassesTestMixin):
+
+    def test_func(self):
+        object = self.get_object()
+        return object.author == self.request.user
+
+
+
+class PostCreateView(OnlyAuthorMixin, LoginRequiredMixin, CreateView):
+    model = Post
+    form_class = PostForm
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        return super().form_valid(form)
+    
+    template_name = 'blog/create.html'
+    success_url = reverse_lazy('blog:index')
+
+
 
 class PostListView(ListView):
     template_name = 'blog/index.html'
@@ -154,19 +160,6 @@ class PostListView(ListView):
     ordering = 'id'
     paginate_by = 10
 
-class PostDetailView(DetailView):
-    model = Post
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        
-        context['form'] = CongratulationForm()
-        context['congratulations'] = (
-            # Дополнительно подгружаем авторов комментариев,
-            # чтобы избежать множества запросов к БД.
-            self.object.congratulations.select_related('author')
-        )
-        return context
 
 class PostDeleteView(LoginRequiredMixin, OnlyAuthorMixin, DeleteView):
     model = Comment
@@ -182,34 +175,22 @@ class PostUpdateView(LoginRequiredMixin, OnlyAuthorMixin, UpdateView):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-class CommentListView(ListView):
-    template_name = 'blog/comment.html'
-    model = Comment
-    queryset = Comment.objects.filter()
-    ordering = 'id'
-    paginate_by = 10
-
-
 class CommentCreateView(LoginRequiredMixin, CreateView):
     model = Comment
     form_class = CommentForm
     template_name = 'blog/comment.html'
+    success_url = 'blog:detail'
     def form_valid(self, form):
+        post = get_object_or_404(Post, pk=self.kwargs['pk'])
+        comment = form.save(commit=False)
+        comment.post = post
         form.instance.author = self.request.user
+        comment.save()
         return super().form_valid(form)
+    
+
+    def get_success_url(self):
+        return reverse('blog:post_detail', kwargs={'pk': self.object.post.pk})
 
 class CommentDeleteView(LoginRequiredMixin, OnlyAuthorMixin, DeleteView):
     model = Comment
@@ -221,5 +202,5 @@ class CommentUpdateView(LoginRequiredMixin, OnlyAuthorMixin, UpdateView):
     form_class = CommentForm
     template_name = 'blog/comment.html'
     fields = '__all__'
-    
+    success_url = reverse_lazy('blog:post_detail')
     

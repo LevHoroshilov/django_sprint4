@@ -82,15 +82,22 @@ class Comment(models.Model):
         User,
         on_delete=models.CASCADE,
         verbose_name='Автор комментария',)
+    
+    post = models.ForeignKey(
+        'Post',
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True
+    )
 
 class Post(CommonModel):
-    '''
-    comment = models.ForeignKey(
+    
+    """comment = models.ForeignKey(
         Comment,
         on_delete=models.CASCADE,
         verbose_name='Комментарий к публикации',
-    )
-    '''
+    )"""
+    
     title = models.CharField(
         verbose_name='Заголовок',
         max_length=256,
