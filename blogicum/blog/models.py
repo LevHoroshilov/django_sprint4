@@ -4,7 +4,7 @@ from django.db import models
 
 from users.forms import User
 
-class PostQuerySet(models.QuerySet):
+class PostPublishQuerySet(models.QuerySet):
     def based_filter(self):
         return self.filter(
             is_published=True,
@@ -13,11 +13,14 @@ class PostQuerySet(models.QuerySet):
         )
 
 
+class PostPublishManager(models.Manager):
+    def get_queryset(self):
+        return PostPublishQuerySet(self.model).based_filter()
+
 class PostManager(models.Manager):
     def get_queryset(self):
-        return PostQuerySet(self.model).based_filter()
-
-
+        return super().get_queryset()
+    
 class CommonModel(models.Model):
     """Абстрактная модель. Добaвляет флаг is_published и created_at."""
 
@@ -101,7 +104,6 @@ class Post(CommonModel):
         verbose_name='Заголовок',
         max_length=256,
     )
-    #comment_count = models.IntegerField()
     text = models.TextField(verbose_name='Текст', default='')
     pub_date = models.DateTimeField(
         verbose_name='Дата и время публикации',
@@ -127,7 +129,9 @@ class Post(CommonModel):
         verbose_name='Категория',
     )
     image = models.ImageField(verbose_name='Фото', blank=True, upload_to='posts_images')
-    objects = PostManager()
+
+    objects = PostPublishManager()
+    user_objects = PostManager()
 
 
     class Meta:

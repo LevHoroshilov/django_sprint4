@@ -7,6 +7,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 
 from blog.models import Post, Category, Comment
 from blog.forms import PostForm, CommentForm
+from blog.utils import comment_count
+from users.forms import User
 
 
 class PostDetailView(DetailView):
@@ -22,8 +24,14 @@ class PostDetailView(DetailView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['form'] = CommentForm()
-        context['comments'] = Comment.objects.filter(post__id=self.kwargs['pk'])
+        form = CommentForm()
+        context['form'] = form
+        '''context['comment_count'] = Comment.objects.filter(
+            post_id=self.kwargs['pk']
+        ).count()'''
+        comments = Comment.objects.filter(post__id=self.kwargs['pk'])
+        context['post.comment_count'] = comment_count(comments)
+        context['comments'] = comments
         return context
 
 
@@ -54,14 +62,19 @@ class UserPageListView(LoginRequiredMixin, ListView):
     paginate_by = 10
     model = Post
 
+    def author(self):
+        return get_object_or_404(User, username=self.kwargs['username'])
+
+
     def get_queryset(self):
         username = self.kwargs['username']
-        return get_object_or_404(Post.objects.filter(author__username=username).select_related('author'))
-    
-    '''def get_queryset(self):
-        username = self.kwargs['username']
         return Post.objects.filter(author__username=username).select_related('author')
-'''
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['profile'] = self.author()
+        return context
+
 
 class OnlyAuthorMixin(UserPassesTestMixin):
 
@@ -69,6 +82,23 @@ class OnlyAuthorMixin(UserPassesTestMixin):
         object = self.get_object()
         return object.author == self.request.user
 
+class UserUpdateView(OnlyAuthorMixin, UpdateView):
+    model = User
+    username = 'username'
+    template_name = 'blog/user.html'
+    def form_valid(self, form):
+        username = get_object_or_404(User, username=self.kwargs['username'])
+        form = form.save(commit=False)
+        form.username = username
+        #form.instance.author = self.request.user
+        form.save()
+        return super().form_valid(form)
+
+    def get_object(self, queryset=None):
+        return User.objects.get(username=self.kwargs['username'])
+    
+    def get_success_url(self):
+        return reverse('blog:profile', kwargs={'username': self.object.user.username})
 
 class PostMixin:
     model = Post
@@ -158,7 +188,7 @@ class CommentDeleteView(LoginRequiredMixin, OnlyAuthorMixin, DeleteView, Comment
         return reverse('blog:post_detail', kwargs={'pk': self.object.post.pk})
 
 
-class CommentUpdateView(LoginRequiredMixin, OnlyAuthorMixin, UpdateView, CommentAuthorMixin):
+class CommentUpdateView(OnlyAuthorMixin,UpdateView):#commentauthormixin
     model = Comment
     form_class = CommentForm
     template_name = 'blog/comment.html'
@@ -168,7 +198,6 @@ class CommentUpdateView(LoginRequiredMixin, OnlyAuthorMixin, UpdateView, Comment
         post = get_object_or_404(Post, pk=self.kwargs['pk'])
         comment = form.save(commit=False)
         comment.post = post
-        form.instance.author = self.request.user
         comment.save()
         return super().form_valid(form)
 
