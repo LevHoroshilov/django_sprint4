@@ -30,8 +30,9 @@ ALLOWED_HOSTS = [
     '127.0.0.1'
 ]
 
-
-# Application definition
+INTERNAL_IPS = [
+'127.0.0.1',
+]
 
 INSTALLED_APPS = [
     'django_bootstrap5',
@@ -143,3 +144,7 @@ LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'blog:index'
 
 MEDIA_ROOT = BASE_DIR / 'media'
+
+EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+
+EMAIL_FILE_PATH = BASE_DIR / 'sent_emails'

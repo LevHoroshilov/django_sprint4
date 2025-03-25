@@ -1,6 +1,6 @@
-from django.shortcuts import render
+from django.views.generic import TemplateView
 
-# Create your views here.
+
 rules_list = [
     '''<b>Cамовыражение.</b> У наших пользователей должна
     быть возможность создать что-то своё, выразить себя,
@@ -35,14 +35,11 @@ about_list = [
     основные черты наших пользователей.''',
 ]
 
-
-def about(request):
-    template = 'pages/about.html'
-    context = {'about_list': about_list}
-    return render(request, template, context)
+class AboutTemplateView(TemplateView):
+    template_name = 'pages/about.html'
+    about_list = about_list
 
 
-def rules(request):
-    context = {'rules_list': rules_list}
-    template = 'pages/rules.html'
-    return render(request, template, context)
+class RulesTemplateView(TemplateView):
+    template_name = 'pages/rules.html'
+    rules_list = rules_list

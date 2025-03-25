@@ -1,7 +1,6 @@
 import datetime
 
 from django.db import models
-from django.contrib.auth import get_user_model
 
 from users.forms import User
 
@@ -74,7 +73,7 @@ class Image(models.Model):
     )
 '''
 class Comment(models.Model):
-    text = models.TextField(blank=False, null=True)
+    text = models.TextField(verbose_name='Текст', blank=False, null=True)
     pub_date = models.DateTimeField(
         verbose_name='Дата публикации комментария',
         default=datetime.datetime.now,)
@@ -102,7 +101,8 @@ class Post(CommonModel):
         verbose_name='Заголовок',
         max_length=256,
     )
-    text = models.TextField(verbose_name='Текст', default='23')
+    #comment_count = models.IntegerField()
+    text = models.TextField(verbose_name='Текст', default='')
     pub_date = models.DateTimeField(
         verbose_name='Дата и время публикации',
         default=datetime.datetime.now,
