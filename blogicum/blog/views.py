@@ -6,7 +6,7 @@ from django.urls import reverse_lazy,reverse
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.decorators import login_required
 
-from blog.models import Post, Category, Comment
+from blogicum.blog.models import Post, Category, Comment
 from blog.forms import PostForm, CommentForm
 from blog.utils import comment_count
 from users.forms import User, CustomUserCreationForm
