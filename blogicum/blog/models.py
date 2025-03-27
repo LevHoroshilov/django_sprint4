@@ -17,6 +17,10 @@ class PostPublishManager(models.Manager):
     def get_queryset(self):
         return PostPublishQuerySet(self.model).based_filter()
 
+class PostPublishManager(models.Manager):
+    def get_queryset(self):
+        return PostPublishQuerySet(self.model).based_filter()
+
 class PostManager(models.Manager):
     def get_queryset(self):
         return super().get_queryset().filter(is_published=True,
