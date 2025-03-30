@@ -122,7 +122,7 @@ class PostCreateView(LoginRequiredMixin, CreateView):
     
     def get_success_url(self):
         #username = self.kwargs['username']
-        return reverse('blog:profile', kwargs={'username':self.request.user.username})              #kwargs={'profile': self.get_object().user}
+        return reverse('blog:profile', kwargs={'username':self.request.user.username})
 
 
 class PostListView(ListView):
