@@ -3,7 +3,8 @@ import datetime
 from django.db import models
 
 from users.forms import User
-from .utils import comment_count
+
+
 class PostPublishQuerySet(models.QuerySet):
     def based_filter(self):
         return self.filter(
@@ -17,16 +18,15 @@ class PostPublishManager(models.Manager):
     def get_queryset(self):
         return PostPublishQuerySet(self.model).based_filter()
 
-class PostPublishManager(models.Manager):
-    def get_queryset(self):
-        return PostPublishQuerySet(self.model).based_filter()
-
+class PostQuerySet(models.QuerySet):
+    def based_filter(self):
+        return self.all()
+    
 class PostManager(models.Manager):
     def get_queryset(self):
-        return super().get_queryset().filter(is_published=True,
-            category__is_published=True,
-            pub_date__lte=datetime.datetime.now(),)
+        return PostQuerySet(self.model).based_filter()
     
+
 class CommonModel(models.Model):
     """Абстрактная модель. Добaвляет флаг is_published и created_at."""
 
@@ -72,20 +72,16 @@ class Category(CommonModel):
     def __str__(self):
         return self.title
 
-'''
-class Image(models.Model):
-    image = models.ImageField(blank=True, upload_to='posts_images')
-    post = models.ForeignKey(
-        'Post',
-        on_delete=models.CASCADE,
-        verbose_name='Фото',
-    )
-'''
+
+'''class Image(models.Model):
+    image = models.ImageField(blank=True, upload_to='posts_images')'''
+
+
 class Comment(models.Model):
     text = models.TextField(verbose_name='Текст', blank=False, null=True)
     pub_date = models.DateTimeField(
         verbose_name='Дата публикации комментария',
-        default=datetime.datetime.now,)
+        auto_now_add=True)
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -99,12 +95,7 @@ class Comment(models.Model):
     )
 
 class Post(CommonModel):
-    
-    """comment = models.ForeignKey(
-        Comment,
-        on_delete=models.CASCADE,
-        verbose_name='Комментарий к публикации',
-    )"""
+
     
     title = models.CharField(
         verbose_name='Заголовок',
@@ -135,8 +126,8 @@ class Post(CommonModel):
         verbose_name='Категория',
     )
     image = models.ImageField(verbose_name='Фото', blank=True, upload_to='posts_images')
-    #objects = PostPublishManager()
-    objects = PostManager()
+    only_author_objects = PostManager()
+    objects = PostPublishManager()
 
 
     class Meta:

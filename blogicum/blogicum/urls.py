@@ -11,6 +11,8 @@ urlpatterns = [
     path('', include('blog.urls', namespace='blog')),
     path('pages/', include('pages.urls', namespace='pages')),
     path('auth/', include('django.contrib.auth.urls')),
+    #path('posts/', include('blog.urls', namespace='blog')),
+    #path('profile/', include('blog.urls', namespace='blog')),
     path(
         'auth/registration/', 
         CreateView.as_view(
