@@ -1,30 +1,30 @@
 import datetime
 
 from django.db import models
+from django.utils import timezone
 
 from users.forms import User
 
 
-class PostPublishQuerySet(models.QuerySet):
+class PostQuerySet(models.QuerySet):
     def based_filter(self):
-        return self.filter(
+        return self.select_related('category', 'location', 'author').filter(
             is_published=True,
             category__is_published=True,
             pub_date__lte=datetime.datetime.now(),
         )
+    def all_filter(self):
+        return self.all()
 
 
 class PostPublishManager(models.Manager):
     def get_queryset(self):
-        return PostPublishQuerySet(self.model).based_filter()
+        return PostQuerySet(self.model).based_filter()
 
-class PostQuerySet(models.QuerySet):
-    def based_filter(self):
-        return self.all()
     
 class PostManager(models.Manager):
     def get_queryset(self):
-        return PostQuerySet(self.model).based_filter()
+        return PostQuerySet(self.model).all_filter()
     
 
 class CommonModel(models.Model):
@@ -101,6 +101,8 @@ class Post(CommonModel):
         verbose_name='Заголовок',
         max_length=256,
     )
+    '''comment = models.ForeignKey(Comment,on_delete=models.CASCADE,blank=True,
+        null=True)'''
     text = models.TextField(verbose_name='Текст', default='')
     pub_date = models.DateTimeField(
         verbose_name='Дата и время публикации',

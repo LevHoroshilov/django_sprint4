@@ -6,8 +6,10 @@ class PostForm(forms.ModelForm):
 
     class Meta:
         model = Post
-        fields = '__all__'
-        exclude = ('author',)
+        fields = ('title', 'text', 'pub_date', 'location', 'category', 'image')
+        '''widgets = {
+      'post_id':,
+    }'''
 
 
 class CommentForm(forms.ModelForm):

@@ -1,10 +1,9 @@
-import datetime
-
 from django.shortcuts import get_object_or_404
 from django.views.generic import ListView, CreateView, DeleteView, UpdateView, DetailView
 from django.urls import reverse_lazy,reverse
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Count
+from django.shortcuts import redirect
 
 from blog.models import Post, Category, Comment
 from blog.forms import PostForm, CommentForm
@@ -18,10 +17,6 @@ class PostDetailView(DetailView):
         return Post.only_author_objects.filter(
             id=self.kwargs['pk'],
         )
-    '''pub_date__lte=datetime.datetime.now(),
-            is_published=True,
-            category__is_published=True,
-            '''
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -42,8 +37,8 @@ class CategoryPostsListView(ListView):
         category_slug = self.kwargs['category_slug']
         return Post.objects.filter(
             category__slug=category_slug,
-            ).select_related('category').annotate(comment_count=Count('comment'))
-    
+            ).select_related('category').annotate(comment_count=Count('comment')).order_by('-pub_date')
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['category'] = get_object_or_404(
@@ -54,26 +49,23 @@ class CategoryPostsListView(ListView):
         return context
 
 
-class UserPageListView(LoginRequiredMixin, ListView):
+class UserPageListView(ListView):
     template_name = 'blog/profile.html'
     paginate_by = 10
     model = Post
-
-    def author(self):
-        return get_object_or_404(User, username=self.kwargs['username'])
-
+    
     def get_queryset(self):
         username = self.kwargs['username']
         if self.request.user.username == self.kwargs['username']:
-            return Post.only_author_objects.filter(author__username=username).select_related('author').annotate(comment_count=Count('comment')).order_by('-pub_date')
+            posts = Post.only_author_objects
         else:
-            return Post.objects.filter(author__username=username).select_related('author').annotate(comment_count=Count('comment')).order_by('-pub_date')
+            posts = Post.objects
+        
+        return posts.filter(author__username=username).select_related('author').annotate(comment_count=Count('comment')).order_by('-pub_date')
 
-    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['profile'] = get_object_or_404(User, username=self.kwargs['username'])
-        #print('username: ', context['profile'].username)
         return context
 
 
@@ -81,7 +73,6 @@ class OnlyAuthorMixin(UserPassesTestMixin):
 
     def test_func(self):
         object = self.get_object()
-        print(object, self.request.user)
         return object.author == self.request.user
 
 
@@ -95,17 +86,16 @@ class OnlyUserMixin(UserPassesTestMixin):
 class UserUpdateView(OnlyUserMixin, UpdateView):
     model = User
     form_class = UserForm
-    username = 'username'
     template_name = 'blog/user.html'
 
 
     def form_valid(self, form):
-        #username = get_object_or_404(User, username=self.kwargs['username'])
         form.save()
         return super().form_valid(form)
 
     def get_object(self, queryset=None):
-        return User.objects.get(username=self.kwargs['username'])
+        username = self.request.user.username
+        return get_object_or_404(User, username=username)
     
     def get_success_url(self):
         return reverse('blog:profile', kwargs={'username': self.request.user.username})
@@ -121,33 +111,31 @@ class PostCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
     
     def get_success_url(self):
-        #username = self.kwargs['username']
-        return reverse('blog:profile', kwargs={'username':self.request.user.username})
+        return reverse_lazy('blog:profile', kwargs={'username':self.request.user.username})
 
 
 class PostListView(ListView):
     template_name = 'blog/index.html'
     model = Post
-    queryset = Post.objects.annotate(comment_count=Count('comment'))
-    ordering = 'pub_date'
     paginate_by = 10
+
+    def get_queryset(self):
+        return Post.objects.annotate(comment_count=Count('comment')).order_by('-pub_date')
 
 
 class PostDeleteView(OnlyAuthorMixin, DeleteView):
     model = Post
-    #form_class = PostForm
     template_name = 'blog/create.html'
     success_url = reverse_lazy('blog:index')
 
     def get_object(self, queryset=None):
-        return Post.objects.get(pk=self.kwargs['pk'])
+        return get_object_or_404(Post, pk=self.kwargs['pk'])
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
         post = self.get_object()
 
-        print(PostForm(instance=post).instance)
         context['form'] = PostForm(instance=post)
         return context
 
@@ -156,14 +144,15 @@ class PostUpdateView(OnlyAuthorMixin, UpdateView):
     form_class = PostForm
     model = Post
     template_name = 'blog/create.html'
-    #success_url = reverse('blog:index')
 
     def get_object(self, queryset=None):
-        return Post.objects.get(pk=self.kwargs.get('pk'))
-    
+        return get_object_or_404(Post, pk=self.kwargs['pk'])
+
     def get_success_url(self):
-        #username = self.kwargs['username']
-        return reverse('blog:profile', kwargs={'username':self.request.user.username})
+        return reverse('blog:post_detail', kwargs={'pk':self.kwargs['pk']})
+
+    def handle_no_permission(self):
+        return redirect(reverse('blog:post_detail', kwargs={'pk':self.kwargs['pk']}))
 
 
 
@@ -195,20 +184,20 @@ class CommentCreateView(LoginRequiredMixin, CreateView):
 
 
 
-class CommentDeleteView(OnlyAuthorMixin, DeleteView, CommentAuthorMixin):#
+class CommentDeleteView(OnlyAuthorMixin, DeleteView):#
     model = Comment
     template_name = 'blog/comment.html'
     success_url = 'blog:post_detail'
 
     def get_object(self, queryset=None):
         comment_id = self.kwargs.get('comment_id')
-        return Comment.objects.get(pk=comment_id)
+        return get_object_or_404(Comment, pk=comment_id)
     
     def get_success_url(self):
         return reverse('blog:post_detail', kwargs={'pk': self.object.post.pk})
 
 
-class CommentUpdateView(OnlyAuthorMixin,UpdateView, CommentAuthorMixin):#commentauthormixin
+class CommentUpdateView(OnlyAuthorMixin,UpdateView):#commentauthormixin
     model = Comment
     form_class = CommentForm
     template_name = 'blog/comment.html'
@@ -216,7 +205,7 @@ class CommentUpdateView(OnlyAuthorMixin,UpdateView, CommentAuthorMixin):#comment
 
     def get_object(self, queryset=None):
         comment_id = self.kwargs.get('comment_id')
-        return Comment.objects.get(pk=comment_id)
+        return get_object_or_404(Comment, pk=comment_id)
     
     def get_success_url(self):
         return reverse('blog:post_detail', kwargs={'pk': self.object.post.pk})
