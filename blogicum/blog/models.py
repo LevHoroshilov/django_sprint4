@@ -1,6 +1,7 @@
 import datetime
 
 from django.db import models
+from django.db.models import Count
 
 from users.forms import User
 
@@ -11,10 +12,17 @@ class PostQuerySet(models.QuerySet):
             is_published=True,
             category__is_published=True,
             pub_date__lte=datetime.datetime.now(),
+            ).annotate(
+            comment_count=Count('comment')
+            ).order_by('-pub_date'
         )
 
     def all_filter(self):
-        return self.all()
+        return self.all().select_related(
+            'category', 'location', 'author').annotate(
+            comment_count=Count('comment')
+            ).order_by('-pub_date'
+        )
 
 
 class PostPublishManager(models.Manager):

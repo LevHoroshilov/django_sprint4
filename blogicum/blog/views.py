@@ -37,11 +37,7 @@ class CategoryPostsListView(ListView):
 
     def get_queryset(self):
         category_slug = self.kwargs['category_slug']
-        return Post.objects.filter(
-            category__slug=category_slug).select_related(
-            'category').annotate(
-            comment_count=Count('comment')
-        ).order_by('-pub_date')
+        return Post.objects.all()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -65,10 +61,7 @@ class UserPageListView(ListView):
         else:
             posts = Post.objects
 
-        return posts.filter(author__username=username
-                ).select_related('author').annotate(
-                comment_count=Count('comment')
-        ).order_by('-pub_date')
+        return posts.filter(author__username=username)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -133,8 +126,7 @@ class PostListView(ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        return Post.objects.annotate(
-            comment_count=Count('comment')).order_by('-pub_date')
+        return Post.objects.all()
 
 
 class PostDeleteView(OnlyAuthorMixin, DeleteView):
