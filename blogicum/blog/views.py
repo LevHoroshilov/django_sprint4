@@ -41,7 +41,7 @@ class CategoryPostsListView(ListView):
             category__slug=category_slug).select_related(
             'category').annotate(
             comment_count=Count('comment')
-            ).order_by('-pub_date')
+        ).order_by('-pub_date')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -66,9 +66,9 @@ class UserPageListView(ListView):
             posts = Post.objects
 
         return posts.filter(author__username=username
-                            ).select_related('author').annotate(
-                                comment_count=Count('comment')
-                                ).order_by('-pub_date')
+                ).select_related('author').annotate(
+                comment_count=Count('comment')
+        ).order_by('-pub_date')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
