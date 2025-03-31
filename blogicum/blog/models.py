@@ -1,7 +1,6 @@
 import datetime
 
 from django.db import models
-from django.utils import timezone
 
 from users.forms import User
 
@@ -13,6 +12,7 @@ class PostQuerySet(models.QuerySet):
             category__is_published=True,
             pub_date__lte=datetime.datetime.now(),
         )
+
     def all_filter(self):
         return self.all()
 
@@ -21,11 +21,11 @@ class PostPublishManager(models.Manager):
     def get_queryset(self):
         return PostQuerySet(self.model).based_filter()
 
-    
+
 class PostManager(models.Manager):
     def get_queryset(self):
         return PostQuerySet(self.model).all_filter()
-    
+
 
 class CommonModel(models.Model):
     """Абстрактная модель. Добaвляет флаг is_published и created_at."""
@@ -86,7 +86,7 @@ class Comment(models.Model):
         User,
         on_delete=models.CASCADE,
         verbose_name='Автор комментария',)
-    
+
     post = models.ForeignKey(
         'Post',
         on_delete=models.CASCADE,
@@ -94,15 +94,13 @@ class Comment(models.Model):
         null=True
     )
 
+
 class Post(CommonModel):
 
-    
     title = models.CharField(
         verbose_name='Заголовок',
         max_length=256,
     )
-    '''comment = models.ForeignKey(Comment,on_delete=models.CASCADE,blank=True,
-        null=True)'''
     text = models.TextField(verbose_name='Текст', default='')
     pub_date = models.DateTimeField(
         verbose_name='Дата и время публикации',
@@ -127,10 +125,11 @@ class Post(CommonModel):
         null=True,
         verbose_name='Категория',
     )
-    image = models.ImageField(verbose_name='Фото', blank=True, upload_to='posts_images')
+    image = models.ImageField(
+        verbose_name='Фото', blank=True, upload_to='posts_images'
+        )
     only_author_objects = PostManager()
     objects = PostPublishManager()
-
 
     class Meta:
         verbose_name = 'публикация'

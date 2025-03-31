@@ -31,12 +31,11 @@ ALLOWED_HOSTS = [
 ]
 
 INTERNAL_IPS = [
-'127.0.0.1',
+    '127.0.0.1',
 ]
 
 INSTALLED_APPS = [
     'django_bootstrap5',
-    'core.apps.CoreConfig',
     'users.apps.UsersConfig',
     'blog.apps.BlogConfig',
     'pages.apps.PagesConfig',
