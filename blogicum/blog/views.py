@@ -68,8 +68,8 @@ class UserPageListView(ListView):
         return posts.filter(
             author__username=username
             ).select_related(
-                'author'
-                ).annotate(
+            'author'
+            ).annotate(
             comment_count=Count('comment')
         ).order_by('-pub_date')
 
