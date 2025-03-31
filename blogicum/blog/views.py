@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404
 from django.views.generic import (
     ListView, CreateView, DeleteView, UpdateView, DetailView
-    )
+)
 from django.urls import reverse_lazy, reverse
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Count
@@ -38,12 +38,10 @@ class CategoryPostsListView(ListView):
     def get_queryset(self):
         category_slug = self.kwargs['category_slug']
         return Post.objects.filter(
-            category__slug=category_slug,
-            ).select_related(
-                'category'
-                ).annotate(
-                    comment_count=Count('comment')
-                    ).order_by('-pub_date')
+            category__slug=category_slug).select_related(
+            'category').annotate(
+            comment_count=Count('comment')
+            ).order_by('-pub_date')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -107,7 +105,10 @@ class UserUpdateView(OnlyUserMixin, UpdateView):
         return get_object_or_404(User, username=username)
 
     def get_success_url(self):
-        return reverse('blog:profile', kwargs={'username': self.request.user.username})
+        return reverse(
+            'blog:profile',
+            kwargs={'username': self.request.user.username}
+        )
 
 
 class PostCreateView(LoginRequiredMixin, CreateView):
@@ -120,7 +121,10 @@ class PostCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse_lazy('blog:profile', kwargs={'username': self.request.user.username})
+        return reverse_lazy(
+            'blog:profile',
+            kwargs={'username': self.request.user.username}
+        )
 
 
 class PostListView(ListView):
@@ -129,7 +133,8 @@ class PostListView(ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        return Post.objects.annotate(comment_count=Count('comment')).order_by('-pub_date')
+        return Post.objects.annotate(
+            comment_count=Count('comment')).order_by('-pub_date')
 
 
 class PostDeleteView(OnlyAuthorMixin, DeleteView):
@@ -161,7 +166,8 @@ class PostUpdateView(OnlyAuthorMixin, UpdateView):
         return reverse('blog:post_detail', kwargs={'pk': self.kwargs['pk']})
 
     def handle_no_permission(self):
-        return redirect(reverse('blog:post_detail', kwargs={'pk': self.kwargs['pk']}))
+        return redirect(reverse(
+            'blog:post_detail', kwargs={'pk': self.kwargs['pk']}))
 
 
 class CommentAuthorMixin(UserPassesTestMixin):
@@ -197,12 +203,12 @@ class CommentDeleteView(OnlyAuthorMixin, DeleteView):
     def get_object(self, queryset=None):
         comment_id = self.kwargs.get('comment_id')
         return get_object_or_404(Comment, pk=comment_id)
-    
+
     def get_success_url(self):
         return reverse('blog:post_detail', kwargs={'pk': self.object.post.pk})
 
 
-class CommentUpdateView(OnlyAuthorMixin,UpdateView):#commentauthormixin
+class CommentUpdateView(OnlyAuthorMixin, UpdateView):  # commentauthormixin
     model = Comment
     form_class = CommentForm
     template_name = 'blog/comment.html'

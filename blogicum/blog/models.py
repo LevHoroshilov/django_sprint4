@@ -127,7 +127,7 @@ class Post(CommonModel):
     )
     image = models.ImageField(
         verbose_name='Фото', blank=True, upload_to='posts_images'
-        )
+    )
     only_author_objects = PostManager()
     objects = PostPublishManager()
 

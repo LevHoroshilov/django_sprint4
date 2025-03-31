@@ -14,7 +14,7 @@ urlpatterns = [
     # path('posts/', include('blog.urls', namespace='blog')),
     # path('profile/', include('blog.urls', namespace='blog')),
     path(
-        'auth/registration/', 
+        'auth/registration/',
         CreateView.as_view(
             template_name='registration/registration_form.html',
             form_class=UserCreationForm,
