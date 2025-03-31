@@ -160,6 +160,10 @@ class PostUpdateView(OnlyAuthorMixin, UpdateView):
     model = Post
     template_name = 'blog/create.html'
 
+    def form_valid(self, form):
+        form.save()
+        return super().form_valid(form)
+
     def get_object(self, queryset=None):
         return get_object_or_404(Post, pk=self.kwargs['pk'])
 

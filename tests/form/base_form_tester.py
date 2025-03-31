@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+import pdb
 import re
 from abc import abstractmethod, ABC
 from functools import partial
@@ -365,6 +365,7 @@ class BaseFormTester(BaseTester):
     def test_edit_item(
         self, updated_form: BaseForm, qs: QuerySet, item_adapter: ModelAdapterT
     ) -> HttpResponse:
+        #pdb.set_trace()
         instances_before: Set[Model] = set(qs.all())
 
         can_edit, _ = self.user_can_edit(
